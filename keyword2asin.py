@@ -65,7 +65,6 @@ def get_review_number(driver,review_number_xpath):
 def get_price(driver,price_xpath,price_timesale_xpath):
     try:
         price = driver.find_element(By.XPATH, price_xpath).text
-
     except:
         try:
             price = driver.find_element(By.XPATH, price_timesale_xpath).text
@@ -100,15 +99,10 @@ def main(keyword,page_number):
     review_number_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@id, 'acrCustomerReviewText')]"
     price_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span/span[2]/span[2]'
     price_timesale_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span[2]/span[2]/span[2]'
-
-
-
-
-
-    
+   
 
     # 商品リンク一覧取得
-    products = driver.find_elements_by_xpath(products_link_xpath)
+    products = driver.find_elements(products_link_xpath)
     links = [product.get_attribute('href') for product in products]
     wait.until(EC.presence_of_all_elements_located)
 
