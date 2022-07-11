@@ -32,16 +32,7 @@ def driver_set():
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     driver.maximize_window()
     driver.implicitly_wait(3)
-    return driver
-
-def click_button(driver, xpath_button):
-    button = driver.find_element_by_xpath(xpath_button)
-    button.click()
-
-def input_text(driver, input_xpath, input_text):
-    input_element = driver.find_element_by_xpath(input_xpath)
-    input_element.send_keys(input_text)
-  
+    return driver 
 
 def save_csv(data, file_path):
     with open(file_path, 'w') as file:
@@ -50,7 +41,7 @@ def save_csv(data, file_path):
 
 def get_product_title(driver,product_title_xpath):
     try:
-        product_title = driver.find_element_by_xpath(product_title_xpath).text
+        product_title = driver.find_element(By.XPATH, product_title_xpath).text
       
     except:
         product_title = ''
@@ -58,7 +49,7 @@ def get_product_title(driver,product_title_xpath):
 
 def get_review_value(driver,review_value_xpath):
     try:
-        review_value = driver.find_element_by_xpath(review_value_xpath).get_attribute("textContent").replace('5つ星のうち', '')
+        review_value = driver.find_element(By.XPATH, review_value_xpath).text.replace('5つ星のうち', '')
         
     except:
         review_value = ''
@@ -66,18 +57,18 @@ def get_review_value(driver,review_value_xpath):
 
 def get_review_number(driver,review_number_xpath):
     try:
-        review_number = driver.find_element_by_xpath(review_number_xpath).get_attribute("textContent").replace('個の評価', '').replace(',', '')
+        review_number = driver.find_element(By.XPATH, review_number_xpath).text.replace('個の評価', '').replace(',', '')
     except:
         review_number = ''
     return review_number
 
 def get_price(driver,price_xpath,price_timesale_xpath):
     try:
-        price = driver.find_element_by_xpath(price_xpath).get_attribute("textContent")
+        price = driver.find_element(By.XPATH, price_xpath).text
 
     except:
         try:
-            price = driver.find_element_by_xpath(price_timesale_xpath)
+            price = driver.find_element(By.XPATH, price_timesale_xpath).text
         except:
             price = ""
     return price
@@ -86,10 +77,10 @@ def get_asin(driver):
     for i in range(1,10):
         try:
             asin_text_xpath = '//*[@id="detailBullets_feature_div"]/ul/li['+str(i)+']/span/span[1]'
-            asin_text = driver.find_element_by_xpath(asin_text_xpath).get_attribute("textContent")
+            asin_text = driver.find_element(By.XPATH, asin_text_xpath).text
             if "ASIN" in asin_text:
                 asin_xpath = '//*[@id="detailBullets_feature_div"]/ul/li['+str(i)+']/span/span[2]'
-                asin = driver.find_element_by_xpath(asin_xpath).get_attribute("textContent")
+                asin = driver.find_element(By.XPATH, asin_xpath).text
                 break
         except:
             asin = ""
@@ -122,7 +113,7 @@ def main(keyword,page_number):
     wait.until(EC.presence_of_all_elements_located)
 
     # 商品個別ページを表示
-    for link in links:
+    for link in links[0:3]:
         driver.get(link)
         wait.until(EC.presence_of_all_elements_located)
 
