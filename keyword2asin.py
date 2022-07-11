@@ -102,7 +102,7 @@ def main(keyword,page_number):
    
 
     # 商品リンク一覧取得
-    products = driver.find_elements(products_link_xpath)
+    products = driver.find_element(By.XPATH, products_link_xpath)
     links = [product.get_attribute('href') for product in products]
     wait.until(EC.presence_of_all_elements_located)
 
