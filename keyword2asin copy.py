@@ -96,40 +96,45 @@ def get_asin(driver):
             asin = ""
     return asin
 
-def main(keyword,link):
-    product_detail = []
+def main(keyword,page_number):
     driver = driver_set()
-    driver.get(link)
+    driver.get(f"https://www.amazon.co.jp/s?k={keyword}&page={page_number}")
     wait = WebDriverWait(driver=driver, timeout=30)
     wait.until(EC.presence_of_all_elements_located)
+    product_detail = []
+
+    # xpath一覧
+    products_link_xpath = "//h2/a"
     product_title_xpath = "//span[contains(@id, 'productTitle')]"
     review_value_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@class, 'a-icon-alt')]"
     review_number_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@id, 'acrCustomerReviewText')]"
     price_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span/span[2]/span[2]'
     price_timesale_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span[2]/span[2]/span[2]'  
-    product_title = get_product_title(driver,product_title_xpath)
-    price = get_price(driver,price_xpath,price_timesale_xpath)
-    review_value = get_review_value(driver,review_value_xpath)
-    review_number = get_review_number(driver,review_number_xpath)
-    asin = get_asin(driver)
-    product_detail.append([keyword, product_title, price, review_value, review_number,asin])
-    # ブラウザを終了
-    driver.close()
-    return product_detail
 
-def read_link(keyword,page_number):
-    driver = driver_set()
-    driver.get(f"https://www.amazon.co.jp/s?k={keyword}&page={page_number}")
-    wait = WebDriverWait(driver=driver, timeout=30)
-    wait.until(EC.presence_of_all_elements_located)
-    # xpath一覧
-    products_link_xpath = "//h2/a"
     # 商品リンク一覧取得
     products = driver.find_elements_by_xpath(products_link_xpath)
     links = [product.get_attribute('href') for product in products]
     wait.until(EC.presence_of_all_elements_located)
+
+    # 商品個別ページを表示
+    for link in links:
+        driver.get(link)
+        wait.until(EC.presence_of_all_elements_located)
+
+        product_title = get_product_title(driver,product_title_xpath)
+        price = get_price(driver,price_xpath,price_timesale_xpath)
+        review_value = get_review_value(driver,review_value_xpath)
+        review_number = get_review_number(driver,review_number_xpath)
+        asin = get_asin(driver)
+        product_detail.append([keyword, product_title, price, review_value, review_number,asin])
+
+    # # データの保存
+    # save_csv(product_detail, 'amazon.csv')
+
+    # ブラウザを終了
     driver.close()
-    return links
+    return product_detail
+
 
 @st.cache
 def convert_df(df):
@@ -147,17 +152,22 @@ if st.sidebar.button("検索開始"):
     st.subheader("検索結果")
     with st.spinner("現在検索中..."):
         product_details = pd.DataFrame()
-        page = ["1","2"]
-        for page_number in page:
-            links = read_link(keyword,page_number)
-
-            with ThreadPoolExecutor(max_workers=20) as executor:
-                futures = [executor.submit(main, keyword,link) for link in links]
-                for future in as_completed(futures):
-                    _ = future.result()
-                    _ = pd.DataFrame(_)
-                    product_details = pd.concat([product_details,_],axis=0)
+        page_numbers = ["1","2"]
+        # main(keyword)
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(main, keyword,page_number) for page_number in page_numbers]
+            for future in as_completed(futures):
+                _ = future.result()
+                _ = pd.DataFrame(_)
+                product_details = pd.concat([product_details,_],axis=0)
     product_details.columns = ["キーワード","商品名","値段","レビュー","レビュー数","ASIN"]
+    # product_details.to_csv("amazon.csv",index=False,encoding="utf-8-sig")
+    # save_csv(product_details, 'amazon.csv')
+    # asin_df = pd.DataFrame(asin_list)
+    # item_df = pd.DataFrame(item_list)
+
+    # output = pd.concat([item_df,asin_df,price_df],axis=1)
+    # output.columns = ["アイテム名","ASINコード","値段"]
     st.dataframe(product_details)
     csv_data = convert_df(product_details)
     if st.download_button(label="Download data as CSV",data=csv_data,file_name='キーワード検索結果.csv',mime='text/csv',):
