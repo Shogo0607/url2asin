@@ -58,7 +58,7 @@ def get_product_title(driver,product_title_xpath):
 
 def get_review_value(driver,review_value_xpath):
     try:
-        review_value = driver.find_element_by_xpath(review_value_xpath).get_attribute("textContent").replace('5つ星のうち', '')
+        review_value = driver.find_element_by_xpath(review_value_xpath).get_attribute("textContent").replace('out of 5 stars', '')
         
     except:
         review_value = ''
@@ -66,7 +66,7 @@ def get_review_value(driver,review_value_xpath):
 
 def get_review_number(driver,review_number_xpath):
     try:
-        review_number = driver.find_element_by_xpath(review_number_xpath).get_attribute("textContent").replace('個の評価', '').replace(',', '')
+        review_number = driver.find_element_by_xpath(review_number_xpath).get_attribute("textContent").replace('ratings', '').replace(',', '')
     except:
         review_number = ''
     return review_number
@@ -122,7 +122,7 @@ def main(keyword,page_number):
     wait.until(EC.presence_of_all_elements_located)
 
     # 商品個別ページを表示
-    for link in links[2:4]:
+    for link in links:
         driver.get(link)
         wait.until(EC.presence_of_all_elements_located)
 
