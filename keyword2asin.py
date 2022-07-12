@@ -17,7 +17,7 @@ st.title("URL→ASIN高速変換ツール")
 
 st.sidebar.title("URL→ASIN高速変換ツール")
 
-url = st.sidebar.text_input("URLを入力してください")
+
 
 
 price_list = list()
@@ -108,13 +108,7 @@ def main(keyword,page_number):
     review_value_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@class, 'a-icon-alt')]"
     review_number_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@id, 'acrCustomerReviewText')]"
     price_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span/span[2]/span[2]'
-    price_timesale_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span[2]/span[2]/span[2]'
-
-
-
-
-
-    
+    price_timesale_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span[2]/span[2]/span[2]'  
 
     # 商品リンク一覧取得
     products = driver.find_elements_by_xpath(products_link_xpath)
@@ -146,14 +140,16 @@ def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv().encode('utf-8-sig')
 
+
+keyword = st.sidebar.text_input("検索ワードを入力してください")
+
 if st.sidebar.button("検索開始"):
-    # if not url:
-    #     st.warning("URLを入力してください")
-    #     st.stop()
+    if keyword == "":
+        st.warning("検索ワードを入力してください")
+        st.stop()
 
     st.subheader("検索結果")
     with st.spinner("現在検索中..."):
-        keyword = "財布"
         product_details = pd.DataFrame()
         page_numbers = ["1","2"]
         # main(keyword)
