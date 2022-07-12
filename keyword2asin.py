@@ -151,7 +151,7 @@ if st.sidebar.button("検索開始"):
         for page_number in page:
             links = read_link(keyword,page_number)
 
-            with ThreadPoolExecutor(max_workers=20) as executor:
+            with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(main, keyword,link) for link in links]
                 for future in as_completed(futures):
                     _ = future.result()
