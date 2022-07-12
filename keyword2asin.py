@@ -138,6 +138,7 @@ def convert_df(df):
 
 
 keyword = st.sidebar.text_input("検索ワードを入力してください")
+page_range = st.sidebar.slider('検索ページ数',1, 20, (1, 5))
 
 if st.sidebar.button("検索開始"):
     if keyword == "":
@@ -147,9 +148,8 @@ if st.sidebar.button("検索開始"):
     st.subheader("検索結果")
     with st.spinner("現在検索中..."):
         product_details = pd.DataFrame()
-        page = ["1","2"]
-        for page_number in page:
-            links = read_link(keyword,page_number)
+        for page_number in range(page_range[0],page_range[1]):
+            links = read_link(keyword,str(page_number))
 
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(main, keyword,link) for link in links]
