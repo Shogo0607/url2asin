@@ -12,12 +12,12 @@ from PIL import Image
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
-st.set_page_config(page_title="キーワード→ASIN高速変換ツール")
-st.title("キーワード→ASIN高速変換ツール")
+st.set_page_config(page_title="URL→ASIN高速変換ツール")
+st.title("URL→ASIN高速変換ツール")
 
-st.sidebar.title("キーワード→ASIN高速変換ツール")
+st.sidebar.title("URL→ASIN高速変換ツール")
 
-
+url = st.sidebar.text_input("URLを入力してください")
 
 
 price_list = list()
@@ -32,7 +32,16 @@ def driver_set():
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
     driver.maximize_window()
     driver.implicitly_wait(3)
-    return driver 
+    return driver
+
+def click_button(driver, xpath_button):
+    button = driver.find_element_by_xpath(xpath_button)
+    button.click()
+
+def input_text(driver, input_xpath, input_text):
+    input_element = driver.find_element_by_xpath(input_xpath)
+    input_element.send_keys(input_text)
+  
 
 def save_csv(data, file_path):
     with open(file_path, 'w') as file:
@@ -41,7 +50,7 @@ def save_csv(data, file_path):
 
 def get_product_title(driver,product_title_xpath):
     try:
-        product_title = driver.find_element(By.XPATH, product_title_xpath).text
+        product_title = driver.find_element_by_xpath(product_title_xpath).text
       
     except:
         product_title = ''
@@ -49,7 +58,7 @@ def get_product_title(driver,product_title_xpath):
 
 def get_review_value(driver,review_value_xpath):
     try:
-        review_value = driver.find_element(By.XPATH, review_value_xpath).text.replace('5つ星のうち', '')
+        review_value = driver.find_element_by_xpath(review_value_xpath).get_attribute("textContent").replace('5つ星のうち', '')
         
     except:
         review_value = ''
@@ -57,17 +66,18 @@ def get_review_value(driver,review_value_xpath):
 
 def get_review_number(driver,review_number_xpath):
     try:
-        review_number = driver.find_element(By.XPATH, review_number_xpath).text.replace('個の評価', '').replace(',', '')
+        review_number = driver.find_element_by_xpath(review_number_xpath).get_attribute("textContent").replace('個の評価', '').replace(',', '')
     except:
         review_number = ''
     return review_number
 
 def get_price(driver,price_xpath,price_timesale_xpath):
     try:
-        price = driver.find_element(By.XPATH, price_xpath).text
+        price = driver.find_element_by_xpath(price_xpath).get_attribute("textContent")
+
     except:
         try:
-            price = driver.find_element(By.XPATH, price_timesale_xpath).text
+            price = driver.find_element_by_xpath(price_timesale_xpath)
         except:
             price = ""
     return price
@@ -76,10 +86,10 @@ def get_asin(driver):
     for i in range(1,10):
         try:
             asin_text_xpath = '//*[@id="detailBullets_feature_div"]/ul/li['+str(i)+']/span/span[1]'
-            asin_text = driver.find_element(By.XPATH, asin_text_xpath).text
+            asin_text = driver.find_element_by_xpath(asin_text_xpath).get_attribute("textContent")
             if "ASIN" in asin_text:
                 asin_xpath = '//*[@id="detailBullets_feature_div"]/ul/li['+str(i)+']/span/span[2]'
-                asin = driver.find_element(By.XPATH, asin_xpath).text
+                asin = driver.find_element_by_xpath(asin_xpath).get_attribute("textContent")
                 break
         except:
             asin = ""
@@ -99,15 +109,20 @@ def main(keyword,page_number):
     review_number_xpath = "//div[contains(@id, 'centerCol')]//span[contains(@id, 'acrCustomerReviewText')]"
     price_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span/span[2]/span[2]'
     price_timesale_xpath = '//*[@id="corePriceDisplay_desktop_feature_div"]/div[1]/span[2]/span[2]/span[2]'
-   
+
+
+
+
+
+    
 
     # 商品リンク一覧取得
-    products = driver.find_element(By.XPATH, products_link_xpath)
+    products = driver.find_elements_by_xpath(products_link_xpath)
     links = [product.get_attribute('href') for product in products]
     wait.until(EC.presence_of_all_elements_located)
 
     # 商品個別ページを表示
-    for link in links[0:3]:
+    for link in links[2:4]:
         driver.get(link)
         wait.until(EC.presence_of_all_elements_located)
 
@@ -131,33 +146,34 @@ def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv().encode('utf-8-sig')
 
-keyword = st.sidebar.text_input("検索ワードを入力してください")
-start_button = st.sidebar.button("検索開始")
-if not start_button:
-    st.warning("検索開始を押してください")
-    st.stop()
+if st.sidebar.button("検索開始"):
+    # if not url:
+    #     st.warning("URLを入力してください")
+    #     st.stop()
 
-st.subheader("検索結果")
-with st.spinner("現在検索中..."):
-    product_details = pd.DataFrame()
-    page_numbers = ["1","2"]
-    # main(keyword)
-    with ThreadPoolExecutor(max_workers=20) as executor:
-        futures = [executor.submit(main, keyword,page_number) for page_number in page_numbers]
-        for future in as_completed(futures):
-            _ = future.result()
-            _ = pd.DataFrame(_)
-            product_details = pd.concat([product_details,_],axis=0)
-product_details.columns = ["キーワード","商品名","値段","レビュー","レビュー数","ASIN"]
-# product_details.to_csv("amazon.csv",index=False,encoding="utf-8-sig")
-# save_csv(product_details, 'amazon.csv')
-# asin_df = pd.DataFrame(asin_list)
-# item_df = pd.DataFrame(item_list)
+    st.subheader("検索結果")
+    with st.spinner("現在検索中..."):
+        keyword = "財布"
+        product_details = pd.DataFrame()
+        page_numbers = ["1","2"]
+        # main(keyword)
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            futures = [executor.submit(main, keyword,page_number) for page_number in page_numbers]
+            for future in as_completed(futures):
+                _ = future.result()
+                _ = pd.DataFrame(_)
+                product_details = pd.concat([product_details,_],axis=0)
+    product_details.columns = ["キーワード","商品名","値段","レビュー","レビュー数","ASIN"]
+    # product_details.to_csv("amazon.csv",index=False,encoding="utf-8-sig")
+    # save_csv(product_details, 'amazon.csv')
+    # asin_df = pd.DataFrame(asin_list)
+    # item_df = pd.DataFrame(item_list)
 
-# output = pd.concat([item_df,asin_df,price_df],axis=1)
-# output.columns = ["アイテム名","ASINコード","値段"]
-st.dataframe(product_details)
-csv_data = convert_df(product_details)
-done = 1
-st.download_button(label="Download data as CSV",data=csv_data,file_name='キーワード検索結果.csv',mime='text/csv',)
+    # output = pd.concat([item_df,asin_df,price_df],axis=1)
+    # output.columns = ["アイテム名","ASINコード","値段"]
+    st.dataframe(product_details)
+    csv_data = convert_df(product_details)
+    if st.download_button(label="Download data as CSV",data=csv_data,file_name='キーワード検索結果.csv',mime='text/csv',):
+        st.success("ダウンロード完了")
+        st.stop
 
