@@ -83,6 +83,7 @@ def get_price(driver,price_xpath,price_timesale_xpath):
     return price
 
 def get_asin(driver):
+    asin = ""
     for i in range(1,10):
         try:
             asin_text_xpath = '//*[@id="detailBullets_feature_div"]/ul/li['+str(i)+']/span/span[1]'
