@@ -12,10 +12,10 @@ from PIL import Image
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
-st.set_page_config(page_title="URL→ASIN高速変換ツール")
-st.title("URL→ASIN高速変換ツール")
+st.set_page_config(page_title="Amazonキーワード検索ツール")
+st.title("Amazonキーワード検索ツール")
 
-st.sidebar.title("URL→ASIN高速変換ツール")
+st.sidebar.title("Amazonキーワード検索ツール")
 
 
 
@@ -67,6 +67,7 @@ def get_review_value(driver,review_value_xpath):
 def get_review_number(driver,review_number_xpath):
     try:
         review_number = driver.find_element_by_xpath(review_number_xpath).get_attribute("textContent").replace('ratings', '').replace(',', '')
+        review_number = review_number.replace('rating', '')
     except:
         review_number = ''
     return review_number
@@ -134,7 +135,7 @@ def read_link(keyword,page_number):
 @st.cache
 def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
-    return df.to_csv().encode('utf-8-sig')
+    return df.to_csv(index=False).encode('utf-8-sig')
 
 
 keyword = st.sidebar.text_input("検索ワードを入力してください")
@@ -149,14 +150,15 @@ if st.sidebar.button("検索開始"):
     with st.spinner("現在検索中..."):
         product_details = pd.DataFrame()
         for page_number in range(page_range[0],page_range[1]):
-            links = read_link(keyword,str(page_number))
+            with st.spinner("現在"+page_number+"ページ目を検索中"):
+                links = read_link(keyword,str(page_number))
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    futures = [executor.submit(main, keyword,link) for link in links]
+                    for future in as_completed(futures):
+                        _ = future.result()
+                        _ = pd.DataFrame(_)
+                        product_details = pd.concat([product_details,_],axis=0)
 
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(main, keyword,link) for link in links]
-                for future in as_completed(futures):
-                    _ = future.result()
-                    _ = pd.DataFrame(_)
-                    product_details = pd.concat([product_details,_],axis=0)
     product_details.columns = ["キーワード","商品名","値段","レビュー","レビュー数","ASIN"]
     st.dataframe(product_details)
     csv_data = convert_df(product_details)
